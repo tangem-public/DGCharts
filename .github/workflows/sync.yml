@@ -1,0 +1,40 @@
+name: Sync Repositories
+
+on:
+  workflow_dispatch: 
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 0 * * *' 
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source repository
+        uses: actions/checkout@v4
+        with:
+          repository: tangem/DGCharts
+          ref: develop
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}  
+          path: source
+
+      - name: Checkout target repository
+        uses: actions/checkout@v4
+        with:
+          repository: tangem-public/DGCharts
+          ref: main
+          token: ${{ secrets.SOURCE_REPO_TOKEN }} 
+          path: target
+
+      - name: Sync source to target
+        run: |
+          rsync -av --exclude='.git' source/ target/
+          cd target
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add .
+          git commit -m "Sync from source repository"
+          git push origin main
